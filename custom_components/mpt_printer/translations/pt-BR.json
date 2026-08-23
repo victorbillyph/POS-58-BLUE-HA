@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MPT-II Bluetooth Printer",
+        "description": "Escolha como acessar a impressora.",
+        "data": {
+          "connection": "Tipo de conexão"
+        }
+      },
+      "ble": {
+        "title": "Impressora Bluetooth",
+        "description": "Escolha uma impressora detectada ou digite o endereço MAC. Deixe a impressora ligada e pareada/confiável no host do Home Assistant.",
+        "data": {
+          "discovered": "Impressoras detectadas",
+          "address": "Endereço MAC",
+          "name": "Nome"
+        }
+      },
+      "serial": {
+        "title": "Impressora serial",
+        "description": "Caminho do dispositivo serial ligado à impressora (ex.: /dev/rfcomm0 para Bluetooth SPP clássico).",
+        "data": {
+          "serial_path": "Caminho do dispositivo",
+          "width": "Largura do papel em caracteres"
+        }
+      }
+    },
+    "error": {
+      "no_address": "Selecione uma impressora ou informe o endereço MAC.",
+      "cannot_connect": "Não foi possível conectar à impressora. Verifique se ela está ligada e dentro do alcance.",
+      "invalid_path": "Não foi possível abrir o dispositivo serial.",
+      "already_configured": "Esta impressora já está configurada."
+    },
+    "abort": {
+      "already_configured": "Esta impressora já está configurada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções da impressora",
+        "data": {
+          "width": "Largura do papel em caracteres (32 para 58mm)",
+          "default_align": "Alinhamento padrão",
+          "default_size": "Tamanho de fonte padrão",
+          "default_feed": "Linhas de avanço de papel padrão",
+          "default_cut": "Cortar o papel por padrão"
+        }
+      }
+    }
+  },
+  "services": {
+    "print_text": {
+      "name": "Imprimir texto",
+      "description": "Envia texto para a impressora MPT-II com formatação ESC/POS."
+    },
+    "print_raw": {
+      "name": "Imprimir bytes ESC/POS brutos",
+      "description": "Envia bytes brutos (base64) direto para a impressora."
+    }
+  }
+}

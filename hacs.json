@@ -1,0 +1,7 @@
+{
+  "name": "MPT-II Bluetooth Printer",
+  "render_readme": true,
+  "homeassistant": {
+    "min_version": "2023.9.0"
+  }
+}

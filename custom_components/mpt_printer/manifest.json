@@ -1,0 +1,17 @@
+{
+  "domain": "mpt_printer",
+  "name": "MPT-II Bluetooth Printer",
+  "codeowners": ["@victor"],
+  "config_flow": true,
+  "documentation": "https://github.com/victor/mpt-printer-ha",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/victor/mpt-printer-ha/issues",
+  "requirements": [],
+  "version": "1.0.0",
+  "bluetooth": [
+    { "local_name_prefix": "MPT" },
+    { "local_name": "MPT-II" },
+    { "local_name": "MPT-11" }
+  ]
+}

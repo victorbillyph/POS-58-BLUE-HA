@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MPT-II Bluetooth Printer",
+        "description": "Choose how to reach the printer.",
+        "data": {
+          "connection": "Connection type"
+        }
+      },
+      "ble": {
+        "title": "Bluetooth printer",
+        "description": "Pick a discovered printer or type its MAC address. The printer should be powered on and paired/trusted with the host running Home Assistant.",
+        "data": {
+          "discovered": "Discovered printers",
+          "address": "MAC address",
+          "name": "Name"
+        }
+      },
+      "serial": {
+        "title": "Serial printer",
+        "description": "Path of the serial device bound to the printer (e.g. /dev/rfcomm0 for classic Bluetooth SPP).",
+        "data": {
+          "serial_path": "Device path",
+          "width": "Paper width in characters"
+        }
+      }
+    },
+    "error": {
+      "no_address": "Select a printer or enter a MAC address.",
+      "cannot_connect": "Could not connect to the printer. Make sure it is powered on and within range.",
+      "invalid_path": "The serial device could not be opened.",
+      "already_configured": "This printer is already configured."
+    },
+    "abort": {
+      "already_configured": "This printer is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Printer options",
+        "data": {
+          "width": "Paper width in characters (32 for 58mm)",
+          "default_align": "Default alignment",
+          "default_size": "Default font size",
+          "default_feed": "Default feed lines",
+          "default_cut": "Cut paper by default"
+        }
+      }
+    }
+  },
+  "services": {
+    "print_text": {
+      "name": "Print text",
+      "description": "Sends text to the MPT-II printer using ESC/POS formatting."
+    },
+    "print_raw": {
+      "name": "Print raw ESC/POS bytes",
+      "description": "Sends raw base64-encoded bytes straight to the printer."
+    }
+  }
+}

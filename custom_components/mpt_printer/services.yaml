@@ -1,0 +1,79 @@
+print_text:
+  name: Print text
+  description: >-
+    Sends text to the MPT-II printer using ESC/POS formatting.
+    Alignment, size, feed and cut default to the values configured in the
+    printer options when omitted.
+  fields:
+    message:
+      name: Message
+      description: Text to print. Line breaks are preserved.
+      required: true
+      example: "Pedido #123\n2x Cafe R$ 8,00\nTotal: R$ 8,00"
+      selector:
+        text:
+          multiline: true
+    align:
+      name: Alignment
+      description: left, center or right.
+      selector:
+        select:
+          options:
+            - left
+            - center
+            - right
+    size:
+      name: Font size
+      description: normal, tall, wide or double (tall+wide).
+      selector:
+        select:
+          options:
+            - normal
+            - tall
+            - wide
+            - double
+    bold:
+      name: Bold
+      selector:
+        boolean:
+    underline:
+      name: Underline
+      selector:
+        boolean:
+    feed:
+      name: Feed lines
+      description: Blank lines fed after printing (0-20).
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 1
+    cut:
+      name: Cut paper
+      selector:
+        boolean:
+    device_id:
+      name: Printer
+      description: Target printer(s). Leave empty to print on all configured printers.
+      selector:
+        device:
+          filter:
+            - integration: mpt_printer
+
+print_raw:
+  name: Print raw ESC/POS bytes
+  description: Sends raw base64-encoded bytes straight to the printer.
+  fields:
+    payload_base64:
+      name: Payload (base64)
+      description: Base64-encoded ESC/POS byte stream.
+      required: true
+      example: "GxANCg=="
+      selector:
+        text:
+    device_id:
+      name: Printer
+      selector:
+        device:
+          filter:
+            - integration: mpt_printer
