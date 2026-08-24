@@ -9,6 +9,15 @@ from dataclasses import dataclass
 
 from bleak import BleakClient, BleakError
 
+try:  # bleak-retry-connector ships with Home Assistant core
+    from bleak_retry_connector import (
+        BleakClientWithServiceCache,
+        establish_connection,
+    )
+except ImportError:  # pragma: no cover - standalone usage
+    BleakClientWithServiceCache = None
+    establish_connection = None
+
 try:  # running inside Home Assistant
     from homeassistant.exceptions import HomeAssistantError
 except ImportError:  # standalone CLI usage without Home Assistant
@@ -21,6 +30,7 @@ except ImportError:  # pragma: no cover - standalone usage
 
 from .const import (
     BLE_CHUNK_SIZE,
+    BLE_CONNECT_ATTEMPTS,
     BLE_CONNECT_TIMEOUT,
     BLE_INTER_CHUNK_DELAY,
     BLE_SCAN_TIMEOUT,
@@ -195,13 +205,35 @@ class BleEscposPrinter(BaseEscposPrinter):
     async def _resolve_device(self):
         """Resolve the BLE device, preferring Home Assistant's own scanner."""
         if _ha_bluetooth is not None and self.hass is not None:
-            device = _ha_bluetooth.async_ble_device_from_address(
-                self.hass, self.address, connectable=True
-            )
+            device = None
+            try:
+                import time as _time
+
+                service_info = _ha_bluetooth.async_last_service_info(
+                    self.hass, self.address, connectable=True
+                )
+                if service_info is not None:
+                    age = _time.monotonic() - service_info.time
+                    _LOGGER.debug(
+                        "%s: último anúncio do HA tem %.0fs", self.address, age
+                    )
+                    if age <= 45:
+                        device = service_info.device
+            except Exception:  # noqa: BLE001 - API varies entre versões
+                device = _ha_bluetooth.async_ble_device_from_address(
+                    self.hass, self.address, connectable=True
+                )
             if device is not None:
+                _LOGGER.debug("%s: usando dispositivo do gerenciador HA", self.address)
                 return device
+            _LOGGER.debug(
+                "%s: sem anúncio recente no HA; iniciando scan próprio", self.address
+            )
         from bleak import BleakScanner
 
+        _LOGGER.debug(
+            "%s: escaneando por até %ss...", self.address, int(BLE_SCAN_TIMEOUT)
+        )
         device = await BleakScanner.find_device_by_address(
             self.address, timeout=BLE_SCAN_TIMEOUT
         )
@@ -211,13 +243,30 @@ class BleEscposPrinter(BaseEscposPrinter):
                 f"({int(BLE_SCAN_TIMEOUT)}s). Ela alterna entre modos LE e "
                 "clássico — tente novamente ou aperte o botão dela."
             )
+        _LOGGER.debug("%s: encontrada no scan próprio", self.address)
         return device
 
     async def _send_once(self, payload: bytes) -> None:
         device = await self._resolve_device()
-        client = BleakClient(device)
+        if establish_connection is not None:
+            client = await establish_connection(
+                BleakClientWithServiceCache or BleakClient,
+                device,
+                self.address,
+                max_attempts=BLE_CONNECT_ATTEMPTS,
+            )
+        else:
+            client = BleakClient(device)
+            try:
+                await asyncio.wait_for(
+                    client.connect(), timeout=BLE_CONNECT_TIMEOUT
+                )
+            except asyncio.TimeoutError as err:
+                raise PrinterTimeout(
+                    f"Tempo esgotado conectando em {self.address}"
+                ) from err
+        _LOGGER.debug("Conectado a %s (%s)", self.address, device.name)
         try:
-            await asyncio.wait_for(client.connect(), timeout=BLE_CONNECT_TIMEOUT)
             if self._char_uuid is None:
                 self._char_uuid = self._pick_character(client)
             response = self._write_chunk_flags(client, self._char_uuid)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -47,6 +48,8 @@ from .printer import (
     SerialEscposPrinter,
     async_find_printers,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 METHOD_SCHEMA = vol.Schema(
     {
@@ -174,7 +177,13 @@ class MptPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 printer = BleEscposPrinter(self.hass, address, name)
                 try:
                     await printer.async_test()
-                except PrinterError:
+                except PrinterError as err:
+                    _LOGGER.warning(
+                        "Validação falhou para %s (%s): %s",
+                        address,
+                        type(err).__name__,
+                        err,
+                    )
                     errors["base"] = "cannot_connect"
                 else:
                     return self.async_create_entry(
