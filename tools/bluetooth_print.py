@@ -36,10 +36,6 @@ def _load_printer_module():
     return BleEscposPrinter, SerialEscposPrinter, build_text_payload
 
 
-class _FakeHass:
-    """Minimal stand-in so the printer classes work outside Home Assistant."""
-
-
 async def main() -> int:
     BleEscposPrinter, SerialEscposPrinter, build_text_payload = _load_printer_module()
     parser = argparse.ArgumentParser(description="Print text on an MPT-II printer")
@@ -66,9 +62,9 @@ async def main() -> int:
     )
 
     if args.ble:
-        printer = BleEscposPrinter(_FakeHass(), args.ble)
+        printer = BleEscposPrinter(None, args.ble)
     else:
-        printer = SerialEscposPrinter(_FakeHass(), args.serial)
+        printer = SerialEscposPrinter(None, args.serial)
 
     await printer.async_send(payload)
     print("OK")

@@ -23,6 +23,7 @@ from .const import (
     BLE_CHUNK_SIZE,
     BLE_CONNECT_TIMEOUT,
     BLE_INTER_CHUNK_DELAY,
+    BLE_SCAN_TIMEOUT,
     KNOWN_SERVICE_UUIDS,
     KNOWN_WRITE_CHARS,
 )
@@ -191,16 +192,29 @@ class BleEscposPrinter(BaseEscposPrinter):
                     )
         return True
 
-    async def _send_once(self, payload: bytes) -> None:
+    async def _resolve_device(self):
+        """Resolve the BLE device, preferring Home Assistant's own scanner."""
+        if _ha_bluetooth is not None and self.hass is not None:
+            device = _ha_bluetooth.async_ble_device_from_address(
+                self.hass, self.address, connectable=True
+            )
+            if device is not None:
+                return device
         from bleak import BleakScanner
 
         device = await BleakScanner.find_device_by_address(
-            self.address, timeout=BLE_CONNECT_TIMEOUT
+            self.address, timeout=BLE_SCAN_TIMEOUT
         )
         if device is None:
             raise PrinterTimeout(
-                f"Impressora {self.address} não encontrada no scan BLE"
+                f"Impressora {self.address} não encontrada no scan BLE "
+                f"({int(BLE_SCAN_TIMEOUT)}s). Ela alterna entre modos LE e "
+                "clássico — tente novamente ou aperte o botão dela."
             )
+        return device
+
+    async def _send_once(self, payload: bytes) -> None:
+        device = await self._resolve_device()
         client = BleakClient(device)
         try:
             await asyncio.wait_for(client.connect(), timeout=BLE_CONNECT_TIMEOUT)
@@ -230,6 +244,8 @@ class BleEscposPrinter(BaseEscposPrinter):
             try:
                 await self._send_once(payload)
                 return
+            except PrinterTimeout:
+                raise
             except PrinterError as err:
                 last_err = err
                 self._char_uuid = None
