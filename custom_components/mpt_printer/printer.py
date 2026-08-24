@@ -203,32 +203,36 @@ class BleEscposPrinter(BaseEscposPrinter):
         return True
 
     async def _resolve_device(self):
-        """Resolve the BLE device, preferring Home Assistant's own scanner."""
-        if _ha_bluetooth is not None and self.hass is not None:
-            device = None
-            try:
-                import time as _time
+        """Resolve the BLE device.
 
+        Inside Home Assistant we always use the managed device from HA's own
+        Bluetooth scanner (raw scans conflict with it and return nothing).
+        The returned wrapper is kept up to date by HA while it advertises.
+        """
+        if _ha_bluetooth is not None and self.hass is not None:
+            try:
                 service_info = _ha_bluetooth.async_last_service_info(
                     self.hass, self.address, connectable=True
                 )
                 if service_info is not None:
-                    age = _time.monotonic() - service_info.time
                     _LOGGER.debug(
-                        "%s: último anúncio do HA tem %.0fs", self.address, age
+                        "%s: usando dispositivo do gerenciador HA", self.address
                     )
-                    if age <= 45:
-                        device = service_info.device
+                    return service_info.device
             except Exception:  # noqa: BLE001 - API varies entre versões
-                device = _ha_bluetooth.async_ble_device_from_address(
-                    self.hass, self.address, connectable=True
-                )
-            if device is not None:
-                _LOGGER.debug("%s: usando dispositivo do gerenciador HA", self.address)
-                return device
-            _LOGGER.debug(
-                "%s: sem anúncio recente no HA; iniciando scan próprio", self.address
+                pass
+            device = _ha_bluetooth.async_ble_device_from_address(
+                self.hass, self.address, connectable=True
             )
+            if device is not None:
+                return device
+            raise PrinterTimeout(
+                f"O Home Assistant ainda não viu {self.address} anunciando. "
+                "Espere o nome dela aparecer na lista de dispositivos "
+                "Bluetooth e mande imprimir novamente."
+            )
+
+        # Fora do HA (CLI standalone): scan próprio
         from bleak import BleakScanner
 
         _LOGGER.debug(
@@ -240,8 +244,7 @@ class BleEscposPrinter(BaseEscposPrinter):
         if device is None:
             raise PrinterTimeout(
                 f"Impressora {self.address} não encontrada no scan BLE "
-                f"({int(BLE_SCAN_TIMEOUT)}s). Ela alterna entre modos LE e "
-                "clássico — tente novamente ou aperte o botão dela."
+                f"({int(BLE_SCAN_TIMEOUT)}s)."
             )
         _LOGGER.debug("%s: encontrada no scan próprio", self.address)
         return device
