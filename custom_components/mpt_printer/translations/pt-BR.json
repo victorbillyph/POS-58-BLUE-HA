@@ -14,7 +14,8 @@
         "data": {
           "discovered": "Impressoras detectadas",
           "address": "Endereço MAC",
-          "name": "Nome"
+          "name": "Nome",
+          "force": "Adicionar sem testar conexão (modo forçado)"
         }
       },
       "serial": {

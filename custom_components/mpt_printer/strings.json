@@ -14,7 +14,8 @@
         "data": {
           "discovered": "Discovered printers",
           "address": "MAC address",
-          "name": "Name"
+          "name": "Name",
+          "force": "Add without testing connection (force mode)"
         }
       },
       "serial": {

@@ -163,17 +163,32 @@ class MptPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema_dict[
             vol.Optional("name", description={"suggested_value": DEFAULT_NAME})
         ] = str
+        schema_dict[vol.Optional("force", default=False)] = BooleanSelector()
 
         if user_input is not None:
             address = str(
                 user_input.get("discovered") or user_input.get(CONF_ADDRESS) or ""
             ).strip()
             name = str(user_input.get("name") or "").strip() or DEFAULT_NAME
+            force = bool(user_input.get("force"))
             if not address:
                 errors["base"] = "no_address"
             else:
                 await self.async_set_unique_id(address.lower())
                 self._abort_if_unique_id_configured()
+                if force:
+                    _LOGGER.warning(
+                        "Adicionando %s sem validação (modo forçado)", address
+                    )
+                    return self.async_create_entry(
+                        title=f"{name} [{address}]",
+                        data={
+                            CONF_CONNECTION: CONN_BLE,
+                            CONF_ADDRESS: address,
+                            CONF_WIDTH: 32,
+                        },
+                        options=_defaults_from({}),
+                    )
                 printer = BleEscposPrinter(self.hass, address, name)
                 try:
                     await printer.async_test()

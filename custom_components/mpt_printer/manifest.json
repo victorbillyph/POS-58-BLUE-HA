@@ -8,7 +8,7 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/victor/mpt-printer-ha/issues",
   "requirements": [],
-  "version": "1.2.0",
+  "version": "1.3.0",
   "bluetooth": [
     { "local_name_prefix": "MPT" },
     { "local_name": "MPT-II" },
