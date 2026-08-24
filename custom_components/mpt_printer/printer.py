@@ -163,7 +163,8 @@ class BleEscposPrinter(BaseEscposPrinter):
     ) -> None:
         super().__init__(name)
         self.hass = hass
-        self.address = address.lower()
+        # HA's bluetooth manager indexes addresses uppercase
+        self.address = address.upper()
         self._char_uuid: str | None = None
 
     @staticmethod
